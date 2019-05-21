@@ -1,0 +1,830 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZSDT_ZPL_CLI
+*&---------------------------------------------------------------------*
+
+
+*----------------------------------------------------------------------*
+*       CLASS lcl_validation IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_validation IMPLEMENTATION.
+
+  METHOD constructor.
+
+    SELECT mblnr
+           mjahr
+           zeile
+           matnr
+           werks
+           lgort
+           charg
+      FROM mseg
+      INTO TABLE li_mseg
+      WHERE mblnr IN s_mblnr
+        AND matnr IN s_matnr
+        AND werks EQ p_werks
+        AND lgort EQ p_lgort.
+    IF sy-subrc IS INITIAL.
+
+      IF s_matnr IS NOT INITIAL.
+        DELETE li_mseg WHERE matnr NOT IN s_matnr.
+        IF sy-subrc IS INITIAL.
+          "do nothing
+        ENDIF.
+      ENDIF.
+
+      IF p_charg IS NOT INITIAL.
+        DELETE li_mseg WHERE charg NE p_charg.
+        IF sy-subrc IS INITIAL.
+          "do nothing
+        ENDIF.
+      ENDIF.
+
+      IF p_mjahr IS NOT INITIAL.
+        DELETE li_mseg WHERE mjahr NE p_mjahr.
+        IF sy-subrc IS NOT INITIAL.
+          "do nothing
+        ENDIF.
+      ENDIF.
+
+    ENDIF.
+
+  ENDMETHOD.
+
+ENDCLASS.
+
+*----------------------------------------------------------------------*
+*       CLASS lcl_batch_label_metrics IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_batch_label_metrics IMPLEMENTATION.
+
+  METHOD constructor.
+    super->constructor( ).
+
+    l_small_head_font = lcl_position_batch=>get( x = 0 y = 35 s = s ).
+    l_values_font = lcl_position_batch=>get( x = 0 y = 65 s = s ).
+    l_bool_font = lcl_position_batch=>get( x = 0 y = 65 s = s ).
+    l_matdesc_font = lcl_position_batch=>get( x = 0 y = 45 s = s ).
+    l_linethickness = lcl_position_batch=>get( x = 3 y = 3 s = s ).
+
+    "material no. header
+    l_matnrhead_origin = lcl_position_batch=>get( x = 25 y = 25 s = s ).
+    l_matnr_origin = lcl_position_batch=>get( x = 25 y = 75 s = s ).
+    l_matnrline1 = lcl_position_batch=>get( x = 0 y = 140 s = s ).
+    l_matnrline1_ln = 650.
+
+    "vertical line
+    l_vline1_origin = lcl_position_batch=>get( x = 650 y = 0 s = s ).
+    l_vline1_width = 3.
+    l_vline1_height = 280.
+    l_vline1_thickness = 3.
+
+    "batch
+    l_batchhead_origin = lcl_position_batch=>get( x = 25 y = 160 s = s ).
+    l_batch_origin = lcl_position_batch=>get( x = 25 y = 210 s = s ).
+    l_batchln_origin = lcl_position_batch=>get( x = 0 y = 280 s = s ).
+    l_batchln_length = 1000.
+
+    "material requirement texts and lines
+    l_hline1_origin = lcl_position_batch=>get( x = 650 y = 100 s = s ).
+    l_hline1_width = 600.
+    l_matnrtext_origin = lcl_position_batch=>get( x = 670 y = 25 s = s ).
+    l_req_origin = lcl_position_batch=>get( x = 670 y = 60 s = s ).
+    l_yes_text = lcl_position_batch=>get( x = 670 y = 130 s = s ).
+    l_no_text = lcl_position_batch=>get( x = 670 y = 220 s = s ).
+    l_hline2_origin = lcl_position_batch=>get( x = 650 y = 190 s = s ).
+    l_hline2_width = 306.
+
+    "material description
+    l_matdesc_origin = lcl_position_batch=>get( x = 25 y = 310 s = s ).
+    l_matdesc_value = lcl_position_batch=>get( x = 25 y = 360 s = s ).
+
+    l_hline3_origin = lcl_position_batch=>get( x = 0 y = 410 s = s ).
+    l_hline3_width = 1000.
+
+    "barcode
+    l_barcode1 = 7.
+    l_barcode2 = 8.
+    l_barcode3 = 170.
+    l_barcode_origin = lcl_position_batch=>get( x = 25 y = 420 s = s ).
+
+    l_hline4_origin = lcl_position_batch=>get( x = 0 y = 650 s = s ).
+    l_hline4_width  = 1000.
+
+    "expiry date
+    l_expdat_origin = lcl_position_batch=>get( x = 25 y = 670 s = s ).
+    l_expdat_value  = lcl_position_batch=>get( x = 25 y = 720 s = s ).
+
+    l_vline2_origin = lcl_position_batch=>get( x = 380 y = 650 s = s ).
+    l_vline2_hw = lcl_position_batch=>get( x = 130 y = 3 s = s ).
+    l_vline2_thickness = 3.
+
+     "bin
+    l_binhead_origin = lcl_position_batch=>get( x = 400 y = 670 s = s ).
+    l_bin_value = lcl_position_batch=>get( x = 400 y = 720 s = s ).
+
+  ENDMETHOD.
+ENDCLASS.
+
+*----------------------------------------------------------------------*
+*       CLASS position IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_position_batch IMPLEMENTATION.
+  METHOD get.
+    CREATE OBJECT result
+      EXPORTING
+        x = x
+        y = y
+        s = s.
+  ENDMETHOD.                    "get
+
+  METHOD constructor.
+    me->x = x * s.
+    me->y = y * s.
+    me->out = me->x && ',' && me->y.
+  ENDMETHOD.                    "constructor
+
+ENDCLASS.                    "position IMPLEMENTATION
+
+*----------------------------------------------------------------------*
+*       CLASS lcl_batch_label IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_batch_label DEFINITION.
+  PUBLIC SECTION.
+
+    INTERFACES:
+      lif_label.
+
+    METHODS:
+      constructor
+        IMPORTING
+          matnr TYPE matnr
+          werks TYPE werks_d
+          lgpbe TYPE lgpbe
+          charg TYPE charg_d,
+      from_quantity
+        IMPORTING
+          q TYPE menge_d
+        RETURNING value(result) TYPE string.
+
+  PRIVATE SECTION.
+    DATA:
+      material_for_barcode(20) TYPE c.
+
+ENDCLASS.
+
+*----------------------------------------------------------------------*
+*       CLASS lcl_bin_list IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_bin_list IMPLEMENTATION.
+
+  METHOD constructor.
+    TYPES:
+      BEGIN OF mard_line,
+        matnr TYPE matnr,
+        lgpbe TYPE lgpbe,
+      END OF mard_line,
+
+      BEGIN OF mara_line,
+        matnr  TYPE matnr,
+        zusage TYPE zusage,
+      END OF mara_line,
+
+      BEGIN OF mcha_line,
+        matnr TYPE matnr,
+        werks TYPE werks_d,
+        charg TYPE charg_d,
+        vfdat TYPE vfdat,
+      END OF mcha_line,
+
+      BEGIN OF t_mseg,
+        mblnr   TYPE mseg-mblnr,
+        mjahr   TYPE mseg-mjahr,
+        zeile   TYPE mseg-zeile,
+        matnr   TYPE mseg-matnr,
+        werks   TYPE mseg-werks,
+        lgort   TYPE mseg-lgort,
+        charg   TYPE mseg-charg,
+      END OF t_mseg.
+
+    DATA:
+      tab_mara  TYPE STANDARD TABLE OF mara_line,
+      tab_mara1 TYPE STANDARD TABLE OF mara_line,
+      lwa_mara  TYPE mara_line,
+      tab_usage TYPE STANDARD TABLE OF zmm_label_usage,
+      lwa_usage TYPE zmm_label_usage,
+      tab_mcha  TYPE STANDARD TABLE OF mcha_line,
+      lwa_mcha  TYPE mcha_line,
+
+      li_mseg TYPE STANDARD TABLE OF t_mseg.
+
+    DATA:
+      tab_mard TYPE STANDARD TABLE OF mard_line,
+      wa_mard TYPE mard_line,
+      line TYPE label_line,
+      label_type TYPE string,
+      patype TYPE rspoptype,
+      idx TYPE i.
+
+    FIELD-SYMBOLS:
+      <lwa_labels> TYPE label_line.
+
+    DATA:
+      lo_validation TYPE REF TO lcl_validation.
+
+    me->printer = printer.
+
+    SELECT SINGLE patype INTO patype FROM tsp03 WHERE padest = printer.
+
+    IF 'ZLZEB' = patype(5) OR 'LZEB' = patype(4).
+      idx = strlen( patype ) - 1.
+      IF patype+idx(1) CO '236'.
+        scale = patype+idx(1).
+      ELSE.
+        scale = 2.
+      ENDIF.
+    ELSE.
+      scale = 2.
+    ENDIF.
+
+    IF  scale EQ 3.
+      label_type = 'LCL_BATCH_LABEL'.
+      CREATE OBJECT metrics TYPE lcl_batch_label_metrics
+        EXPORTING
+          s = 1.
+    ELSEIF scale = 2.
+      label_type = 'LCL_BATCH_LABEL_SCALE2'.
+      CREATE OBJECT metrics TYPE lcl_batch_label_metrics_scale2
+        EXPORTING
+          s = 1 .
+    ENDIF.
+
+    SELECT matnr lgpbe
+      FROM mard
+      INTO TABLE tab_mard
+      WHERE
+        matnr IN matnr_r AND
+        werks = werks AND
+        lgort = lgort AND
+        lgpbe IN lgpbe_r.
+
+    LOOP AT tab_mard INTO wa_mard.
+
+      CREATE OBJECT line-label
+        TYPE (label_type)
+        EXPORTING
+          matnr = wa_mard-matnr
+          werks = werks
+          lgpbe = wa_mard-lgpbe
+          charg = charg. "KEUR20190408 insertion
+
+      IF NOT preview = 'X'.
+        line-print = 'X'.
+      ENDIF.
+      line-matnr = line-label->matnr.
+      line-maktx = line-label->maktx.
+      line-lgpbe = line-label->lgpbe.
+      APPEND line TO labels.
+
+    ENDLOOP.
+
+    CREATE OBJECT lo_validation.
+    IF lo_validation->li_mseg IS NOT INITIAL.
+      li_mseg[] = lo_validation->li_mseg.
+      SORT li_mseg BY matnr
+                      werks
+                      charg.
+      DELETE ADJACENT DUPLICATES FROM li_mseg
+        COMPARING matnr
+                  werks
+                  charg.
+    ENDIF.
+
+    "selection for expiry date
+    IF li_mseg[] IS NOT INITIAL.
+      SELECT matnr
+             werks
+             charg
+             vfdat
+        INTO TABLE tab_mcha
+        FROM mcha
+        FOR ALL ENTRIES IN li_mseg
+        WHERE matnr EQ li_mseg-matnr
+          AND werks EQ li_mseg-werks
+          AND charg EQ li_mseg-charg.
+      IF sy-subrc IS INITIAL.
+        SORT tab_mcha BY matnr
+                         werks.
+      ENDIF.
+    ENDIF.
+
+    "Selection for usage
+    SELECT matnr
+           zusage
+      INTO TABLE tab_mara
+      FROM mara
+      WHERE matnr IN s_matnr.
+    IF sy-subrc IS INITIAL.
+      tab_mara1[] = tab_mara[].
+      SORT tab_mara1 BY zusage.
+      DELETE ADJACENT DUPLICATES FROM tab_mara1
+        COMPARING zusage.
+    ENDIF.
+
+    IF tab_mara1[] IS NOT INITIAL.
+      SELECT *
+        INTO TABLE tab_usage
+        FROM zmm_label_usage
+        FOR ALL ENTRIES IN tab_mara1
+        WHERE zusage EQ tab_mara1-zusage.
+      IF sy-subrc IS INITIAL.
+        SORT tab_usage BY zusage.
+      ENDIF.
+    ENDIF.
+
+    LOOP AT labels
+      ASSIGNING <lwa_labels>.
+
+      "fill expiry date
+      READ TABLE tab_mcha INTO lwa_mcha
+        WITH KEY matnr = <lwa_labels>-matnr
+                 werks = p_werks
+        BINARY SEARCH.
+      IF sy-subrc IS INITIAL.
+        <lwa_labels>-charg = lwa_mcha-charg.
+        <lwa_labels>-vfdat = lwa_mcha-vfdat.
+      ENDIF.
+
+      "fill material requirement
+      READ TABLE tab_mara INTO lwa_mara
+        WITH KEY matnr = <lwa_labels>-matnr.
+      IF sy-subrc IS INITIAL.
+        READ TABLE tab_usage INTO lwa_usage
+          WITH KEY zusage = lwa_mara-zusage
+          BINARY SEARCH.
+        IF sy-subrc IS INITIAL.
+          <lwa_labels>-mreq = lwa_usage-zoutput.
+        ENDIF.
+      ENDIF.
+
+    ENDLOOP.
+
+    IF p_charg IS NOT INITIAL.
+      DELETE labels WHERE charg NE p_charg.
+      IF sy-subrc IS INITIAL.
+        "do nothing
+      ENDIF.
+    ENDIF.
+
+    IF <lwa_labels> IS ASSIGNED.
+     UNASSIGN <lwa_labels>.
+    ENDIF.
+
+    IF lo_validation->li_mseg IS NOT INITIAL.
+      CLEAR li_mseg[].
+      li_mseg[] = lo_validation->li_mseg.
+      SORT li_mseg BY matnr
+                      charg.
+
+      LOOP AT labels ASSIGNING <lwa_labels> .
+        READ TABLE li_mseg TRANSPORTING NO FIELDS
+          WITH KEY matnr    = <lwa_labels>-matnr
+                   charg    = <lwa_labels>-charg
+          BINARY SEARCH.
+        IF sy-subrc IS NOT INITIAL.
+          <lwa_labels>-flag = 'X'. "for deletion
+        ENDIF.
+      ENDLOOP.
+
+      DELETE labels WHERE flag IS NOT INITIAL.
+      If sy-subrc IS INITIAL.
+        "do nothing
+      ENDIF.
+    ENDIF.
+
+    SORT labels BY lgpbe.
+    bin_sort = 'X'.
+
+    IF preview = 'X'.
+      write( ).
+    ELSE.
+      print( ).
+    ENDIF.
+
+  ENDMETHOD.                    "constructor
+
+
+  METHOD command.
+    FIELD-SYMBOLS:
+      <line> TYPE label_line.
+
+    LOOP AT labels ASSIGNING <line>.
+      READ LINE <line>-linno FIELD VALUE g_print.
+      <line>-print = g_print.
+    ENDLOOP.
+
+    CASE sy-ucomm.
+      WHEN 'SELECTALL'.
+        LOOP AT labels ASSIGNING <line>.
+          <line>-print = 'X'.
+        ENDLOOP.
+
+        write( ).
+
+      WHEN 'SELECTNONE'.
+        LOOP AT labels ASSIGNING <line>.
+          <line>-print = ' '.
+        ENDLOOP.
+
+        write( ).
+
+      WHEN 'SORTMATNR'.
+        IF NOT mat_sort = 'X'.
+          SORT labels BY matnr.
+          mat_sort = 'X'.
+        ELSE.
+          SORT labels BY matnr DESCENDING.
+          CLEAR mat_sort.
+        ENDIF.
+        CLEAR bin_sort.
+
+        write( ).
+
+      WHEN 'SORTLGPBE'.
+        IF NOT bin_sort = 'X'.
+          SORT labels BY lgpbe.
+          bin_sort = 'X'.
+        ELSE.
+          SORT labels BY lgpbe DESCENDING.
+          CLEAR bin_sort.
+        ENDIF.
+        CLEAR mat_sort.
+
+        write( ).
+
+      WHEN 'LABELS'.
+        print( ).
+
+    ENDCASE.
+
+  ENDMETHOD.                    "command
+
+
+  METHOD print.
+    DATA:
+      line   TYPE label_line,
+      l_num  TYPE i. "KEUR20190408
+
+    NEW-PAGE PRINT ON
+      NO DIALOG
+      DESTINATION printer
+      IMMEDIATELY 'X'
+      KEEP IN SPOOL ' '.
+
+    LOOP AT labels INTO line.
+      IF p_num IS INITIAL.
+        CHECK line-print = 'X'.
+            line-label->print( m = metrics
+                               line = line ).
+      ELSE.
+        DO p_num TIMES.
+          CHECK line-print = 'X'.
+            line-label->print( m = metrics
+                               line = line ).
+        ENDDO.
+      ENDIF.
+    ENDLOOP.
+
+    MESSAGE 'Print complete'(003) TYPE 'S'.
+
+    LEAVE LIST-PROCESSING.
+  ENDMETHOD.                    "print
+
+
+  METHOD write.
+    FIELD-SYMBOLS:
+      <label> TYPE label_line.
+
+    SET PF-STATUS 'PRINTING'.
+    SET TITLEBAR 'LABELSELECT'.
+
+    sy-lsind = 0.
+
+    WRITE:
+      'Print'(004), 10 'Material'(005), 20 'Bin'(006), 35 'Batch'(008),
+      45 'Text'(007).
+
+    SKIP 1.
+
+    LOOP AT labels ASSIGNING <label>.
+
+      g_print = <label>-print.
+
+      WRITE:
+        AT /2 g_print AS CHECKBOX INPUT ON,
+        AT 10(*) <label>-label->matnr,
+        AT 20(*) <label>-label->lgpbe,
+        AT 35(*) <label>-charg,
+        AT 45(*) <label>-label->maktx.
+
+      <label>-linno = sy-linno.
+
+    ENDLOOP.
+  ENDMETHOD.                    "write
+
+ENDCLASS.                    "bin_list IMPLEMENTATION
+
+*----------------------------------------------------------------------*
+*       CLASS lcl_batch_label_metrics_scale2 IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_batch_label_metrics_scale2 IMPLEMENTATION.
+
+  METHOD constructor.
+    super->constructor( ).
+
+    l_small_head_font = lcl_position_batch=>get( x = 0 y = 26 s = s ).
+    l_values_font = lcl_position_batch=>get( x = 0 y = 46 s = s ).
+    l_bool_font = lcl_position_batch=>get( x = 0 y = 50 s = s ).
+    l_matdesc_font = lcl_position_batch=>get( x = 0 y = 33 s = s ).
+    l_linethickness = lcl_position_batch=>get( x = 2 y = 2 s = s ).
+
+    "material no. header
+    l_matnrhead_origin = lcl_position_batch=>get( x = 16 y = 16 s = s ).
+    l_matnr_origin = lcl_position_batch=>get( x = 16 y = 50 s = s ).
+    l_matnrline1 = lcl_position_batch=>get( x = 0 y = 93 s = s ).
+    l_matnrline1_ln = 433.
+
+    "vertical line
+    l_vline1_origin = lcl_position_batch=>get( x = 433 y = 0 s = s ).
+    l_vline1_width = 2.
+    l_vline1_height = 186.
+    l_vline1_thickness = 2.
+
+    "batch
+    l_batchhead_origin = lcl_position_batch=>get( x = 16 y = 106 s = s ).
+    l_batch_origin = lcl_position_batch=>get( x = 16 y = 140 s = s ).
+    l_batchln_origin = lcl_position_batch=>get( x = 0 y = 186 s = s ).
+    l_batchln_length = 666.
+
+    "material requirement texts and lines
+    l_hline1_origin = lcl_position_batch=>get( x = 433 y = 66 s = s ).
+    l_hline1_width = 400.
+    l_matnrtext_origin = lcl_position_batch=>get( x = 446 y = 16 s = s ).
+    l_req_origin = lcl_position_batch=>get( x = 446 y = 40 s = s ).
+    l_yes_text = lcl_position_batch=>get( x = 446 y = 86 s = s ).
+    l_no_text = lcl_position_batch=>get( x = 446 y = 146 s = s ).
+    l_hline2_origin = lcl_position_batch=>get( x = 443 y = 126 s = s ).
+    l_hline2_width = 204.
+
+    "material description
+    l_matdesc_origin = lcl_position_batch=>get( x = 16 y = 206 s = s ).
+    l_matdesc_value = lcl_position_batch=>get( x = 25 y = 240 s = s ).
+
+    l_hline3_origin = lcl_position_batch=>get( x = 0 y = 270 s = s ).
+    l_hline3_width = 666.
+
+    "barcode
+    l_barcode1 = 3.
+    l_barcode2 = 4.
+    l_barcode3 = 113.
+    l_barcode_origin = lcl_position_batch=>get( x = 80 y = 280 s = s ).
+
+    l_hline4_origin = lcl_position_batch=>get( x = 0 y = 433 s = s ).
+    l_hline4_width  = 666.
+
+    "expiry date
+    l_expdat_origin = lcl_position_batch=>get( x = 16 y = 446 s = s ).
+    l_expdat_value  = lcl_position_batch=>get( x = 25 y = 480 s = s ).
+
+    l_vline2_origin = lcl_position_batch=>get( x = 253 y = 433 s = s ).
+    l_vline2_hw = lcl_position_batch=>get( x = 130 y = 2 s = s ).
+    l_vline2_thickness = 2.
+
+     "bin
+    l_binhead_origin = lcl_position_batch=>get( x = 266 y = 446 s = s ).
+    l_bin_value = lcl_position_batch=>get( x = 266 y = 480 s = s ).
+
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_batch_label IMPLEMENTATION.
+
+  METHOD constructor.
+
+    DATA:
+*      text_name TYPE tdobname,
+      lines TYPE STANDARD TABLE OF tline,
+      line TYPE tline.
+
+    lif_label~matnr = matnr.
+    lif_label~lgpbe = lgpbe.
+    lif_label~charg = charg.
+
+    WRITE lif_label~matnr TO material_for_barcode.
+
+    IF strlen( material_for_barcode ) MOD 2 = 0.
+      SHIFT material_for_barcode BY 1 PLACES RIGHT.
+      material_for_barcode(1) = '0'.
+    ENDIF.
+
+    SELECT SINGLE maktx
+      INTO lif_label~maktx
+      FROM makt
+      WHERE
+        matnr = lif_label~matnr AND
+        spras = sy-langu.
+    IF sy-subrc IS INITIAL.
+      "do nothing
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD lif_label~print.
+
+    DATA:
+      startx          TYPE i,
+      sm              TYPE REF TO lcl_batch_label_metrics,
+      sh_font         TYPE REF TO lcl_position_batch,
+      values_font     TYPE REF TO lcl_position_batch,
+      bool_font       TYPE REF TO lcl_position_batch,
+      matdesc_font    TYPE REF TO lcl_position_batch,
+      line_thickness  TYPE REF TO lcl_position_batch,
+      p1 	            TYPE REF TO lcl_position_batch,
+      p2 	            TYPE REF TO lcl_position_batch,
+      p3 	            TYPE REF TO lcl_position_batch,
+      l_mreq          TYPE string.
+
+    CONSTANTS:
+      lc_yes(3)  TYPE c VALUE 'YES',
+      lc_no(2)   TYPE c VALUE 'NO'.
+
+    sm ?= m.
+
+    sh_font = sm->l_small_head_font.
+    values_font = sm->l_values_font.
+    line_thickness = sm->l_linethickness.
+
+    p1 = sm->l_matnrhead_origin.
+    p2 = sm->l_matnr_origin.
+    p3 = sm->l_matnrline1.
+
+
+    WRITE:
+      / '^XA',
+
+* Material Number
+      / '^CF' NO-GAP, sh_font->out,
+      / '^FO' NO-GAP, p1->out NO-GAP, '^FD' NO-GAP, 'Material No.:' NO-GAP, '^FS',
+      / '^CF' NO-GAP, values_font->out,
+      / '^FO' NO-GAP, p2->out NO-GAP, '^FD' NO-GAP, line-matnr NO-GAP, '^FS'.
+
+    WRITE:
+      / '^FO' NO-GAP, p3->out NO-GAP, '^GB' NO-GAP, '650,' NO-GAP, line_thickness->out NO-GAP, '^FS'.
+
+* Vertical Line
+      p2 = sm->l_vline1_origin.
+
+    WRITE:
+      / '^FO' NO-GAP, p2->out NO-GAP, '^GB' NO-GAP, '3,' NO-GAP, '280,' NO-GAP, '3' NO-GAP, '^FS',
+
+* Batch Number
+      / '^CF' NO-GAP, sh_font->out.
+      p2 = sm->l_batchhead_origin.
+      p3 = sm->l_batch_origin.
+      p1 = sm->l_batchln_origin.
+    WRITE:
+      / '^FO' NO-GAP, p2->out NO-GAP, '^FD' NO-GAP, 'Batch no.:' NO-GAP, '^FS',
+      / '^CF' NO-GAP, values_font->out NO-GAP,
+      / '^FO' NO-GAP, p3->out NO-GAP, '^FD' NO-GAP, line-charg NO-GAP, '^FS'.
+
+* Line below the batch
+    WRITE:
+      / '^FO' NO-GAP, p1->out NO-GAP, '^GB' NO-GAP, '1000' NO-GAP, ',' NO-GAP, line_thickness->out NO-GAP, '^FS'.
+
+* Material Requirement Texts and Lines
+      p3 = sm->l_hline1_origin.
+    WRITE:
+      / '^FO' NO-GAP, p3->out NO-GAP, '^GB' NO-GAP, '306' NO-GAP, ',' NO-GAP, line_thickness->out NO-GAP, '^FS',
+      / '^CF' NO-GAP, sh_font->out.
+
+      p2 = sm->l_matnrtext_origin.
+      p3 = sm->l_req_origin.
+
+      bool_font = sm->l_bool_font.
+
+    WRITE:
+      / '^FO' NO-GAP, p2->out NO-GAP, '^FD' NO-GAP, 'Material' NO-GAP, '^FS',
+      / '^FO' NO-GAP, p3->out NO-GAP, '^FD' NO-GAP, 'Requirements:' NO-GAP, '^FS',
+      / '^CF' NO-GAP, bool_font->out NO-GAP.
+
+    p3 = sm->l_hline2_origin.
+    p1 = sm->l_yes_text.
+    p2 = sm->l_no_text.
+
+    WRITE:
+      / '^FO' NO-GAP, p3->out NO-GAP, '^GB' NO-GAP, '306' NO-GAP, ',' NO-GAP, line_thickness->out NO-GAP, '^FS'.
+
+    "Material requirement color shading
+    l_mreq = line-mreq.
+    TRANSLATE l_mreq TO UPPER CASE.
+    CASE l_mreq.
+      WHEN lc_yes.
+        WRITE:
+          / '^FO' NO-GAP, p3->out NO-GAP, '^GB' NO-GAP, '306' NO-GAP, ',' NO-GAP, '90,' NO-GAP, '45' NO-GAP, '^FS'.
+
+        WRITE:
+          / '^FO' NO-GAP, p1->out NO-GAP, '^FD' NO-GAP, text-009 NO-GAP, '^FS',
+          / '^FO' NO-GAP, p2->out NO-GAP, '^FD' NO-GAP, text-010 NO-GAP, '^FS'.
+      WHEN lc_no.
+        p3 = sm->l_hline1_origin.
+        WRITE:
+          / '^FO' NO-GAP, p3->out NO-GAP, '^GB' NO-GAP, '306' NO-GAP, ',' NO-GAP, '90,' NO-GAP, '45' NO-GAP, '^FS'.
+
+        WRITE:
+          / '^FO' NO-GAP, p1->out NO-GAP, '^FD' NO-GAP, text-009 NO-GAP, '^FS',
+          / '^FO' NO-GAP, p2->out NO-GAP, '^FD' NO-GAP, text-010 NO-GAP, '^FS'.
+      WHEN OTHERS.
+        "do nothing
+    ENDCASE.
+
+* Material description
+   WRITE:
+     / '^CF' NO-GAP, sh_font->out.
+     p2 = sm->l_matdesc_origin.
+     matdesc_font = sm->l_matdesc_font.
+     p3 = sm->l_matdesc_value.
+
+   WRITE:
+     / '^FO' NO-GAP, p2->out NO-GAP, '^FD' NO-GAP, 'Material Description' NO-GAP, '^FS',
+     / '^CF' NO-GAP, matdesc_font->out,
+     / '^FO' NO-GAP, p3->out NO-GAP, '^FD' NO-GAP, line-maktx NO-GAP, '^FS'.
+
+* Line below the material description
+     p1 = sm->l_hline3_origin.
+
+    WRITE:
+      / '^FO' NO-GAP, p1->out NO-GAP, '^GB' NO-GAP, '1000' NO-GAP, ',' NO-GAP, line_thickness->out NO-GAP, '^FS'.
+
+* Barcode
+    WRITE:
+      / '^BY' NO-GAP, '2,' NO-GAP, '2,' NO-GAP, '170'.
+     p3 = sm->l_barcode_origin.
+     p1 = sm->l_hline4_origin.
+
+    WRITE:
+      / '^FO' NO-GAP, p3->out, '^BC^FD' NO-GAP, line-matnr NO-GAP, ' ' NO-GAP, line-charg NO-GAP, '^FS',
+
+* Line below the barcode
+      / '^FO' NO-GAP, p1->out NO-GAP, '^GB' NO-GAP, '1000' NO-GAP, ',' NO-GAP, line_thickness->out NO-GAP, '^FS',
+
+* Expiration Date
+      / '^CF' NO-GAP, sh_font->out.
+
+      p3 = sm->l_expdat_origin.
+      p2 = sm->l_expdat_value.
+
+    WRITE:
+      / '^FO' NO-GAP, p3->out NO-GAP, '^FD' NO-GAP, 'Expire date:' NO-GAP, '^FS',
+      / '^CF' NO-GAP, bool_font->out,
+      / '^FO' NO-GAP, p2->out NO-GAP, '^FD' NO-GAP, line-vfdat NO-GAP, '^FS'.
+
+* Vertical Line
+      p3 = sm->l_vline2_origin.
+      p1 = sm->l_vline2_hw.
+
+    WRITE:
+      / '^FO' NO-GAP, p3->out NO-GAP, '^GB' NO-GAP, '3' NO-GAP, ',' NO-GAP, p1->out NO-GAP, ',' NO-GAP, line_thickness->out NO-GAP, '^FS',
+
+* Bin
+     / '^CF' NO-GAP, sh_font->out.
+
+     p3 = sm->l_binhead_origin.
+     p1 = sm->l_bin_value.
+
+     WRITE:
+       / '^FO' NO-GAP, p3->out NO-GAP, '^FD' NO-GAP, 'Bin:' NO-GAP, '^FS',
+       / '^CF' NO-GAP, bool_font->out,
+       / '^FO' NO-GAP, p1->out NO-GAP, '^FD' NO-GAP, line-lgpbe NO-GAP, '^FS'.
+
+
+     WRITE:
+       '^XZ'.
+
+  ENDMETHOD.
+
+  METHOD from_quantity.
+
+  ENDMETHOD.
+
+ENDCLASS.
