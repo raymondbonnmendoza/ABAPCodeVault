@@ -1,0 +1,314 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZSDT_ZPL_CLD
+*&---------------------------------------------------------------------*
+
+*----------------------------------------------------------------------*
+*       CLASS lcl_validation DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_validation DEFINITION.
+  PUBLIC SECTION.
+    TYPES:
+      BEGIN OF lt_mseg,
+        mblnr   TYPE mseg-mblnr,
+        mjahr   TYPE mseg-mjahr,
+        zeile   TYPE mseg-zeile,
+        matnr   TYPE mseg-matnr,
+        werks   TYPE mseg-werks,
+        lgort   TYPE mseg-lgort,
+        charg   TYPE mseg-charg,
+     END OF lt_mseg.
+
+    METHODS:
+      constructor.
+
+    DATA:
+      li_mseg TYPE STANDARD TABLE OF lt_mseg.
+
+ENDCLASS.
+
+*----------------------------------------------------------------------*
+*       CLASS label_metrics DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_label_metrics DEFINITION.
+
+  PUBLIC SECTION.
+
+    DATA:
+      size            TYPE i,
+      module          TYPE i,
+      barcode_height  TYPE i.
+
+ENDCLASS.                    "label_metrics DEFINITION
+
+*----------------------------------------------------------------------*
+*       CLASS position DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_position_batch DEFINITION.
+
+  PUBLIC SECTION.
+    CLASS-METHODS:
+      get
+        IMPORTING
+          x TYPE i
+          y TYPE i
+          s TYPE i
+        RETURNING value(result) TYPE REF TO lcl_position_batch.
+
+    METHODS:
+      constructor
+        IMPORTING
+          x TYPE i
+          y TYPE i
+          s TYPE i.
+
+    DATA:
+      x TYPE i READ-ONLY,
+      y TYPE i READ-ONLY,
+      out TYPE string READ-ONLY.
+
+ENDCLASS.                    "position DEFINITION
+
+*----------------------------------------------------------------------*
+*       INTERFACE label
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+INTERFACE lif_label.
+
+  TYPES:
+    BEGIN OF label_line,
+      print   TYPE xfeld,
+      matnr   TYPE matnr,
+      lgpbe   TYPE lgpbe,
+      maktx   TYPE maktx,
+      charg   TYPE charg_d,
+      mreq(3) TYPE c,
+      vfdat   TYPE mcha-vfdat,
+      flag(1) TYPE c,
+      label   TYPE REF TO lif_label,
+      linno   TYPE i,
+    END OF label_line.
+
+  METHODS:
+    print IMPORTING m    TYPE REF TO lcl_label_metrics
+                    line TYPE label_line.
+
+  DATA:
+    matnr TYPE matnr   READ-ONLY,
+    maktx TYPE maktx   READ-ONLY,
+    lgpbe TYPE lgpbe   READ-ONLY,
+    charg   TYPE charg_d READ-ONLY,
+    vfdat   TYPE vfdat   READ-ONLY,
+    lgort   TYPE lgort_d READ-ONLY,
+    mreq(3) TYPE c READ-ONLY.
+
+ENDINTERFACE.                    "label
+
+CLASS lcl_bin_list DEFINITION.
+
+  PUBLIC SECTION.
+
+    TYPES:
+      matnr_range TYPE RANGE OF matnr,
+      lgpbe_range TYPE RANGE OF lgpbe.
+
+    METHODS:
+      constructor
+        IMPORTING
+          printer    TYPE sypdest
+          werks      TYPE werks_d
+          lgort      TYPE lgort_d
+          matnr_r    TYPE matnr_range
+          lgpbe_r    TYPE lgpbe_range
+          charg      TYPE charg_d
+          preview    TYPE xfeld,
+          write,
+          command,
+          print.
+
+
+  PRIVATE SECTION.
+
+    TYPES:
+      BEGIN OF label_line,
+        print   TYPE xfeld,
+        matnr   TYPE matnr,
+        lgpbe   TYPE lgpbe,
+        maktx   TYPE maktx,
+        charg   TYPE charg_d,
+        mreq(3) TYPE c,
+        vfdat   TYPE mcha-vfdat,
+        flag(1) TYPE c,
+        label   TYPE REF TO lif_label,
+        linno   TYPE i,
+      END OF label_line.
+
+    DATA:
+      labels TYPE STANDARD TABLE OF label_line,
+      bin_sort TYPE xfeld,
+      mat_sort TYPE xfeld,
+      printer TYPE sypdest,
+      scale TYPE i,
+      metrics TYPE REF TO lcl_label_metrics.
+
+ENDCLASS.                    "wo_list DEFINITION
+
+*----------------------------------------------------------------------*
+*       CLASS  lcl_batch_label_metrics DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_batch_label_metrics DEFINITION INHERITING FROM lcl_label_metrics.
+
+  PUBLIC SECTION.
+    METHODS:
+      constructor IMPORTING s TYPE i.
+
+    DATA:
+      l_small_head_font TYPE REF TO lcl_position_batch READ-ONLY,
+      l_values_font     TYPE REF TO lcl_position_batch READ-ONLY,
+      l_bool_font       TYPE REF TO lcl_position_batch READ-ONLY,
+      l_matdesc_font    TYPE REF TO lcl_position_batch READ-ONLY,
+      l_linethickness   TYPE REF TO lcl_position_batch READ-ONLY,
+
+      "material no. header
+      l_matnrhead_origin TYPE REF TO lcl_position_batch READ-ONLY,
+      l_matnr_origin     TYPE REF TO lcl_position_batch READ-ONLY,
+      l_matnrline1       TYPE REF TO lcl_position_batch READ-ONLY,
+      l_matnrline1_ln     TYPE i,
+
+      "vertical line
+      l_vline1_origin    TYPE REF TO lcl_position_batch READ-ONLY,
+      l_vline1_width     TYPE i,
+      l_vline1_height    TYPE i,
+      l_vline1_thickness TYPE i,
+
+      "batch
+      l_batchhead_origin TYPE REF TO lcl_position_batch READ-ONLY,
+      l_batch_origin     TYPE REF TO lcl_position_batch READ-ONLY,
+      l_batchln_origin   TYPE REF TO lcl_position_batch READ-ONLY,
+      l_batchln_length   TYPE i,
+
+      "material requirement texts and lines
+      l_hline1_origin     TYPE REF TO lcl_position_batch READ-ONLY,
+      l_hline1_width      TYPE i,
+      l_matnrtext_origin  TYPE REF TO lcl_position_batch READ-ONLY,
+      l_req_origin        TYPE REF TO lcl_position_batch READ-ONLY,
+      l_yes_text          TYPE REF TO lcl_position_batch READ-ONLY,
+      l_no_text           TYPE REF TO lcl_position_batch READ-ONLY,
+      l_hline2_origin     TYPE REF TO lcl_position_batch READ-ONLY,
+      l_hline2_width      TYPE i,
+
+      "material description
+      l_matdesc_origin    TYPE REF TO lcl_position_batch READ-ONLY,
+      l_matdesc_value     TYPE REF TO lcl_position_batch READ-ONLY,
+
+      l_hline3_origin     TYPE REF TO lcl_position_batch READ-ONLY,
+      l_hline3_width      TYPE i,
+
+      "barcode
+      l_barcode1          TYPE i,
+      l_barcode2          TYPE i,
+      l_barcode3          TYPE i,
+      l_barcode_origin    TYPE REF TO lcl_position_batch READ-ONLY,
+
+      l_hline4_origin     TYPE REF TO lcl_position_batch READ-ONLY,
+      l_hline4_width      TYPE i,
+
+      "expiry date
+      l_expdat_origin     TYPE REF TO lcl_position_batch READ-ONLY,
+      l_expdat_value      TYPE REF TO lcl_position_batch READ-ONLY,
+
+      l_vline2_origin     TYPE REF TO lcl_position_batch READ-ONLY,
+      l_vline2_hw         TYPE REF TO lcl_position_batch READ-ONLY,
+      l_vline2_width      TYPE i,
+      l_vline2_thickness  TYPE i,
+
+     "bin
+     l_binhead_origin     TYPE REF TO lcl_position_batch READ-ONLY,
+     l_bin_value          TYPE REF TO lcl_position_batch READ-ONLY.
+
+ENDCLASS.
+
+*----------------------------------------------------------------------*
+*       CLASS  lcl_batch_label_metrics_scale2 DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_batch_label_metrics_scale2 DEFINITION INHERITING FROM lcl_label_metrics.
+
+  PUBLIC SECTION.
+    METHODS:
+      constructor IMPORTING s TYPE i.
+
+    DATA:
+      l_small_head_font TYPE REF TO lcl_position_batch READ-ONLY,
+      l_values_font     TYPE REF TO lcl_position_batch READ-ONLY,
+      l_bool_font       TYPE REF TO lcl_position_batch READ-ONLY,
+      l_matdesc_font    TYPE REF TO lcl_position_batch READ-ONLY,
+      l_linethickness   TYPE REF TO lcl_position_batch READ-ONLY,
+
+      "material no. header
+      l_matnrhead_origin TYPE REF TO lcl_position_batch READ-ONLY,
+      l_matnr_origin     TYPE REF TO lcl_position_batch READ-ONLY,
+      l_matnrline1       TYPE REF TO lcl_position_batch READ-ONLY,
+      l_matnrline1_ln     TYPE i,
+
+      "vertical line
+      l_vline1_origin    TYPE REF TO lcl_position_batch READ-ONLY,
+      l_vline1_width     TYPE i,
+      l_vline1_height    TYPE i,
+      l_vline1_thickness TYPE i,
+
+      "batch
+      l_batchhead_origin TYPE REF TO lcl_position_batch READ-ONLY,
+      l_batch_origin     TYPE REF TO lcl_position_batch READ-ONLY,
+      l_batchln_origin   TYPE REF TO lcl_position_batch READ-ONLY,
+      l_batchln_length   TYPE i,
+
+      "material requirement texts and lines
+      l_hline1_origin     TYPE REF TO lcl_position_batch READ-ONLY,
+      l_hline1_width      TYPE i,
+      l_matnrtext_origin  TYPE REF TO lcl_position_batch READ-ONLY,
+      l_req_origin        TYPE REF TO lcl_position_batch READ-ONLY,
+      l_yes_text          TYPE REF TO lcl_position_batch READ-ONLY,
+      l_no_text           TYPE REF TO lcl_position_batch READ-ONLY,
+      l_hline2_origin     TYPE REF TO lcl_position_batch READ-ONLY,
+      l_hline2_width      TYPE i,
+
+      "material description
+      l_matdesc_origin    TYPE REF TO lcl_position_batch READ-ONLY,
+      l_matdesc_value     TYPE REF TO lcl_position_batch READ-ONLY,
+
+      l_hline3_origin     TYPE REF TO lcl_position_batch READ-ONLY,
+      l_hline3_width      TYPE i,
+
+      "barcode
+      l_barcode1          TYPE i,
+      l_barcode2          TYPE i,
+      l_barcode3          TYPE i,
+      l_barcode_origin    TYPE REF TO lcl_position_batch READ-ONLY,
+
+      l_hline4_origin     TYPE REF TO lcl_position_batch READ-ONLY,
+      l_hline4_width      TYPE i,
+
+      "expiry date
+      l_expdat_origin     TYPE REF TO lcl_position_batch READ-ONLY,
+      l_expdat_value      TYPE REF TO lcl_position_batch READ-ONLY,
+
+      l_vline2_origin     TYPE REF TO lcl_position_batch READ-ONLY,
+      l_vline2_hw         TYPE REF TO lcl_position_batch READ-ONLY,
+      l_vline2_width      TYPE i,
+      l_vline2_thickness  TYPE i,
+
+     "bin
+     l_binhead_origin     TYPE REF TO lcl_position_batch READ-ONLY,
+     l_bin_value          TYPE REF TO lcl_position_batch READ-ONLY.
+
+ENDCLASS.

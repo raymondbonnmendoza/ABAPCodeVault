@@ -9,3 +9,6 @@ This messaging Log is an Object-Oriented approach for ABAP.  The result can be v
 
 ## Email Sending thru Distribution List
 This report is a mix of OOP and procedural programming with the aim of showing how to send email to the distribution list.  You need to setup the distribution List in SO23, and place all the email address whom you want to serve as receiver.  
+
+## Zebra Printer Label
+This report shows how Zebra Printer Languane (ZPL) commands are used in ABAP programs. 
