@@ -15,3 +15,7 @@ This report shows how Zebra Printer Language (ZPL) commands are used in ABAP pro
 
 ## Shared Memory Object
 Code and Classes needed to use the Shared Memory Object function equivalent to the obsolete IMPORT FROM MEMORY/EXPORT TO MEMORY ABAP Commands
+
+## Inbound and Outbound ABAP Proxy Logic
+Outbound - Sample code is trigerred during Payment Medium Event 41 to send a file outbound using ABAP Proxy
+Inbound - The inbound sample code demonstrates a payload with attachment using an inbound ABAP Proxy and how to get the attachment and store in an App Server directory(AL11)
