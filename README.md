@@ -23,7 +23,11 @@ Inbound - The inbound sample code demonstrates a payload with attachment using a
 
 ## Sales Order OData Service Useful Methods
 iwbepif_mgw_appl_srv_runtime~create_stream: Post an attachment to a Sales Order from a POST request to the Odata service
+
 iwbepif_mgw_appl_srv_runtime~delete_stream: Delete an attachment from a Sales Order
+
 iwbepif_mgw_appl_srv_runtime~get_stream: Retrieve an attachment from a Sales Order from a GET request to the Odata service
+
 orderitems_update_entity: Update Sales Order items (VBAP) with BAPI_SALESORDER_CHANGE using Schedules(bapischdl), Conditions(bapicond) and Z-Extensions(bape_vbap, bapiparex)
+
 salesorders_update_entity: Update Sales Order header (VBAK) with BAPI_SALESORDER_CHANGE using Z-Extensions(bape_vbak, bapiparex)
