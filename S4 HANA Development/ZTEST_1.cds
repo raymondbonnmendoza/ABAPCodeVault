@@ -67,5 +67,3 @@ define view Ztest
     avg(price) as AvgPrice
     } group by carrid, connid 
       having carrid = $parameters.param
- 
-    
