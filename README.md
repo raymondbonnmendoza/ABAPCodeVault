@@ -21,6 +21,9 @@ Outbound - Sample code is trigerred during Payment Medium Event 41 to send a fil
 
 Inbound - The inbound sample code demonstrates a payload with attachment using an inbound ABAP Proxy and how to get the attachment and store in an App Server directory(AL11)
 
+## CDS Samples
+Sample CDS definitions
+
 ## Sales Order OData Service Useful Methods
 iwbepif_mgw_appl_srv_runtime~create_stream: Post an attachment to a Sales Order from a POST request to the Odata service
 
