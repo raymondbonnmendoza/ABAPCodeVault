@@ -1,4 +1,3 @@
-
 @AbapCatalog.sqlViewName: 'ZCDS_MSEG1'
 @AbapCatalog.compiler.compareFilter: true
 @AbapCatalog.preserveKey: true
